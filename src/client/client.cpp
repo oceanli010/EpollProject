@@ -6,8 +6,8 @@
 
 #include "../../include/socket.h"
 #include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"  // 彩色控制台
-#include "spdlog/sinks/basic_file_sink.h"     // 文件日志
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 class EchoClient {
 private:

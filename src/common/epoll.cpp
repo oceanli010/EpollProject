@@ -1,7 +1,5 @@
 #include "../../include/epoll.h"
 #include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"  // 彩色控制台
-#include "spdlog/sinks/basic_file_sink.h"     // 文件日志
 
 #include <unistd.h>
 #include <string.h>
@@ -9,6 +7,9 @@
 
 #include <stdexcept>
 #include <iostream>
+
+//Epoll系统用于服务端与多个客户端连接时的事件通知系统
+//其工作流程为：创建epoll实例 -> 添加监听描述符 -> 等待事件发生 -> 处理事件
 
 Epoll::Epoll() : epoll_fd_(-1), is_created_(false) {}
 
@@ -24,6 +25,7 @@ bool Epoll::create() {
         return false;
     }
 
+    //创建epoll文件描述符
     epoll_fd_ = epoll_create1(0);
     if (epoll_fd_ < 0) {
         std::cerr << "epoll_create error" << std::endl;
@@ -34,6 +36,7 @@ bool Epoll::create() {
     return true;
 }
 
+//添加监听
 bool Epoll::add(int fd, uint32_t events) {
     if (!is_created_) {
         std::cerr << "Epoll not created" << std::endl;

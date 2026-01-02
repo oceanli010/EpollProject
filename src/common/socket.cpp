@@ -1,7 +1,4 @@
 #include "../../include/socket.h"
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"  // 彩色控制台
-#include "spdlog/sinks/basic_file_sink.h"     // 文件日志
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -52,7 +49,7 @@ bool Socket::createSocket() {
         return false;
     }
 
-    int opt = 1;
+    int opt = 1;    //启用 SO_REUSEADDR 字段的标志位
     //setsockopt：设置套接字选项
     if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         perror("setsockopt failed");
@@ -83,11 +80,11 @@ bool Socket::bindSocket(int port) {
     }
 
     struct sockaddr_in address;
-    std::memset(&address, 0, sizeof(address));
+    std::memset(&address, 0, sizeof(address));  //声明后初始化为0，避免读取到垃圾值
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(port);
+    address.sin_port = htons(port); //htons将端口号转为大端序（高位在前）
 
     if (::bind(fd_, (struct sockaddr*)&address, sizeof(address)) < 0) {
         perror("bind failed");
@@ -122,9 +119,12 @@ Socket Socket::acceptSocket() {
     struct sockaddr_in client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
 
+    //以阻塞方式等待客户端连接
     int client_fd = ::accept(fd_, (struct sockaddr*)&client_addr, &client_addr_len);
 
     if (client_fd < 0) {
+        //在非阻塞模式下，返回空的socket，表示暂时没有新的连接
+        //在后续检查这里的socket是否有效
         if (is_non_blocking_ && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             return Socket();
         }
@@ -152,6 +152,7 @@ bool Socket::connect(const std::string& ip, int port) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
 
+    //将文本地址转为二进制地址，并复制到server_addr结构体
     if (inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr) <= 0) {
         perror("inet_pton failed");
         return false;
@@ -210,16 +211,16 @@ bool Socket::setNonBlocking(bool nonblock) {
         return false;
     }
 
-    int flags = fcntl(fd_, F_GETFL, 0);
+    int flags = fcntl(fd_, F_GETFL, 0); //获取当前标志
     if (flags < 0) {
         perror("fcntl failed");
         return false;
     }
 
     if (nonblock) {
-        flags |= O_NONBLOCK;
+        flags |= O_NONBLOCK;    //添加非阻塞标志
     } else {
-        flags &= ~O_NONBLOCK;
+        flags &= ~O_NONBLOCK;   //清除非阻塞标志
     }
 
     if (fcntl(fd_, F_SETFL, flags) < 0) {
